@@ -26,6 +26,8 @@ export default function RespondentChatPage() {
 
   const [error, setError] = useState('')
   const [isLocalMode] = useState(true) // 本地模式，不保存到数据库
+  const [isRecording, setIsRecording] = useState(false)
+  const recognitionRef = useRef<any>(null)
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -80,6 +82,64 @@ export default function RespondentChatPage() {
       setIsStreaming(false)
       setLoading(false)
     }
+  }
+
+  // 语音识别功能
+  const handleVoiceInput = () => {
+    // 检查浏览器是否支持语音识别
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+
+    if (!SpeechRecognition) {
+      alert('您的浏览器不支持语音识别功能，请使用Chrome浏览器')
+      return
+    }
+
+    if (isRecording) {
+      // 停止录音
+      if (recognitionRef.current) {
+        recognitionRef.current.stop()
+      }
+      setIsRecording(false)
+      return
+    }
+
+    // 开始录音
+    const recognition = new SpeechRecognition()
+    recognitionRef.current = recognition
+
+    recognition.lang = 'zh-CN' // 设置为中文
+    recognition.continuous = false
+    recognition.interimResults = true
+
+    recognition.onstart = () => {
+      setIsRecording(true)
+    }
+
+    recognition.onresult = (event: any) => {
+      let finalTranscript = ''
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript
+        }
+      }
+      if (finalTranscript) {
+        setInput(input + finalTranscript)
+      }
+    }
+
+    recognition.onerror = (event: any) => {
+      console.error('语音识别错误:', event.error)
+      setIsRecording(false)
+      if (event.error === 'not-allowed') {
+        alert('请允许浏览器使用麦克风')
+      }
+    }
+
+    recognition.onend = () => {
+      setIsRecording(false)
+    }
+
+    recognition.start()
   }
 
   const handleSend = async () => {
@@ -264,6 +324,20 @@ export default function RespondentChatPage() {
                   disabled={loading || isStreaming}
                   className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
                 />
+                <button
+                  onClick={handleVoiceInput}
+                  disabled={loading || isStreaming}
+                  className={`p-3 rounded-lg transition-all ${
+                    isRecording
+                      ? 'bg-red-500 text-white animate-pulse'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                  title={isRecording ? '点击停止录音' : '点击开始语音输入'}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                  </svg>
+                </button>
                 <button
                   onClick={handleSend}
                   disabled={loading || isStreaming || !input.trim()}
