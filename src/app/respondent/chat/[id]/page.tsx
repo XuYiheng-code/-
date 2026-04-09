@@ -151,14 +151,6 @@ export default function RespondentChatPage() {
     } catch (err) {
       alert('无法启动语音识别，请确保：\n1. 使用 Chrome 或 Edge 浏览器\n2. 已允许麦克风权限\n3. 网络连接正常')
     }
-      }
-    }
-
-    recognition.onend = () => {
-      setIsRecording(false)
-    }
-
-    recognition.start()
   }
 
   const handleSend = async () => {
