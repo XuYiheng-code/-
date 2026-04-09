@@ -116,16 +116,15 @@ export default function RespondentChatPage() {
         setIsRecording(true)
       }
 
+      // 实时识别结果显示
       recognition.onresult = (event: any) => {
-        let finalTranscript = ''
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          if (event.results[i].isFinal) {
-            finalTranscript += event.results[i][0].transcript
-          }
+        let transcript = ''
+        for (let i = 0; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript
         }
-        if (finalTranscript) {
-          setInput(input + finalTranscript)
-        }
+        console.log('语音识别结果:', transcript)
+        // 直接设置识别结果，不管是否final都显示
+        setInput(transcript)
       }
 
       recognition.onerror = (event: any) => {
