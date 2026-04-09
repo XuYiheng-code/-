@@ -109,22 +109,27 @@ export default function RespondentChatPage() {
       recognitionRef.current = recognition
 
       recognition.lang = 'zh-CN' // 设置为中文
-      recognition.continuous = false
+      recognition.continuous = true  // 持续识别，直到手动停止
       recognition.interimResults = true
 
       recognition.onstart = () => {
         setIsRecording(true)
       }
 
-      // 实时识别结果显示
+      // 实时识别结果显示 - 持续累积
+      let fullTranscript = ''
       recognition.onresult = (event: any) => {
-        let transcript = ''
         for (let i = 0; i < event.results.length; i++) {
-          transcript += event.results[i][0].transcript
+          if (event.results[i].isFinal) {
+            // 最终结果，添加到累积文本
+            fullTranscript += event.results[i][0].transcript
+          } else {
+            // 中间结果，临时显示
+            setInput(fullTranscript + event.results[i][0].transcript)
+          }
         }
-        console.log('语音识别结果:', transcript)
-        // 直接设置识别结果，不管是否final都显示
-        setInput(transcript)
+        // 设置累积的最终文本
+        setInput(fullTranscript)
       }
 
       recognition.onerror = (event: any) => {
