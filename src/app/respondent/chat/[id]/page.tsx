@@ -90,7 +90,7 @@ export default function RespondentChatPage() {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
 
     if (!SpeechRecognition) {
-      alert('您的浏览器不支持语音识别功能，请使用Chrome浏览器')
+      alert('您的浏览器不支持语音识别功能。\n\n请使用 Chrome 或 Edge 浏览器，并确保网址为 https:// 开头。')
       return
     }
 
@@ -104,34 +104,53 @@ export default function RespondentChatPage() {
     }
 
     // 开始录音
-    const recognition = new SpeechRecognition()
-    recognitionRef.current = recognition
+    try {
+      const recognition = new SpeechRecognition()
+      recognitionRef.current = recognition
 
-    recognition.lang = 'zh-CN' // 设置为中文
-    recognition.continuous = false
-    recognition.interimResults = true
+      recognition.lang = 'zh-CN' // 设置为中文
+      recognition.continuous = false
+      recognition.interimResults = true
 
-    recognition.onstart = () => {
-      setIsRecording(true)
-    }
+      recognition.onstart = () => {
+        setIsRecording(true)
+      }
 
-    recognition.onresult = (event: any) => {
-      let finalTranscript = ''
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript
+      recognition.onresult = (event: any) => {
+        let finalTranscript = ''
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript
+          }
+        }
+        if (finalTranscript) {
+          setInput(input + finalTranscript)
         }
       }
-      if (finalTranscript) {
-        setInput(input + finalTranscript)
-      }
-    }
 
-    recognition.onerror = (event: any) => {
-      console.error('语音识别错误:', event.error)
-      setIsRecording(false)
-      if (event.error === 'not-allowed') {
-        alert('请允许浏览器使用麦克风')
+      recognition.onerror = (event: any) => {
+        console.error('语音识别错误:', event.error)
+        setIsRecording(false)
+
+        if (event.error === 'not-allowed') {
+          alert('请在浏览器地址栏左侧点击"锁定"或"设置"按钮，允许使用麦克风。')
+        } else if (event.error === 'no-speech') {
+          alert('未检测到语音，请再说一次。')
+        } else if (event.error === 'network') {
+          alert('网络错误，请检查网络连接。')
+        } else {
+          alert('语音识别出错: ' + event.error + '\n请确保使用 Chrome 或 Edge 浏览器。')
+        }
+      }
+
+      recognition.onend = () => {
+        setIsRecording(false)
+      }
+
+      recognition.start()
+    } catch (err) {
+      alert('无法启动语音识别，请确保：\n1. 使用 Chrome 或 Edge 浏览器\n2. 已允许麦克风权限\n3. 网络连接正常')
+    }
       }
     }
 
